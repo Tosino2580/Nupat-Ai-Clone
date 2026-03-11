@@ -1,5 +1,6 @@
-// Points to our local backend — make sure `cd backend && node server.js` is running
-const BASE_URL = "http://localhost:3001";
+// In production set VITE_API_URL in your Vercel environment variables.
+// Locally it falls back to http://localhost:3001
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // ─── Fetch helpers ────────────────────────────────────────────
 

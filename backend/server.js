@@ -9,15 +9,29 @@ const chatRoutes = require('./routes/chats');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ─── CORS — allow the Vite dev server ────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000',
+  // Allow any Vercel deployment (preview + production)
+  /^https:\/\/.*\.vercel\.app$/,
+  // Allow custom domain if set via env
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:5175',
-      'http://localhost:3000',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      const allowed = allowedOrigins.some((o) =>
+        o instanceof RegExp ? o.test(origin) : o === origin
+      );
+      if (allowed) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );
