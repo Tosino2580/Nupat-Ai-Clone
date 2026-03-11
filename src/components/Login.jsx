@@ -63,14 +63,14 @@ const Login = ({ setShowRegister }) => {
       <div className="relative z-10 w-full max-w-md px-4">
         <form
           onSubmit={handleLogin}
-          className="flex flex-col p-8 bg-black/40 backdrop-blur-xl rounded-2xl border border-gray-800/80 shadow-2xl"
+          className="flex flex-col p-5 sm:p-8 bg-black/40 backdrop-blur-xl rounded-2xl border border-gray-800/80 shadow-2xl"
         >
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-600/20 border border-violet-600/30 mb-4 mx-auto">
               <Sparkles className="w-5 h-5 text-violet-400" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Welcome back</h1>
             <p className="text-gray-400 text-sm">Sign in to continue to Lumina</p>
           </div>
 

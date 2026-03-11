@@ -128,15 +128,15 @@ const SettingsModal = ({ isOpen, onClose, onLogout, chatCount = 0 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       <div
-        className="relative z-10 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
+        className="relative z-10 w-full max-w-2xl rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh]"
         style={{ background: "#0d0d16", border: "1px solid rgba(255,255,255,0.07)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
               <Sparkles size={14} className="text-white" />
@@ -151,27 +151,27 @@ const SettingsModal = ({ isOpen, onClose, onLogout, chatCount = 0 }) => {
           </button>
         </div>
 
-        <div className="flex" style={{ minHeight: "440px" }}>
-          {/* Left nav */}
-          <nav className="w-48 flex-shrink-0 border-r border-white/5 p-3 flex flex-col gap-0.5">
+        <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+          {/* Top tabs on mobile / Left nav on desktop */}
+          <nav className="flex sm:flex-col sm:w-44 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-white/5 p-2 sm:p-3 gap-0.5 overflow-x-auto sm:overflow-visible">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full ${
+                className={`flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex-shrink-0 sm:w-full sm:text-left ${
                   tab === id
                     ? "bg-violet-600/15 text-white border border-violet-600/20"
                     : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
                 }`}
               >
-                <Icon size={15} className={tab === id ? "text-violet-400" : ""} />
-                {label}
+                <Icon size={14} className={tab === id ? "text-violet-400" : ""} />
+                <span className="whitespace-nowrap">{label}</span>
               </button>
             ))}
           </nav>
 
           {/* Right content */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
 
             {/* ── ACCOUNT ── */}
             {tab === "account" && (
@@ -179,7 +179,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, chatCount = 0 }) => {
                 <SectionHeader title="Account" sub="Your profile and account details" />
 
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-white/4 border border-white/6">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-xl shadow-lg flex-shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-xl shadow-lg flex-shrink-0">
                     {(user.email || "U")[0].toUpperCase()}
                   </div>
                   <div className="min-w-0">

@@ -46,7 +46,7 @@ const SearchModal = ({ isOpen, onClose, chatHistory = [], onSelect }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] px-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-[10vh] px-0 sm:px-4"
       aria-modal="true"
       role="dialog"
     >
@@ -57,7 +57,7 @@ const SearchModal = ({ isOpen, onClose, chatHistory = [], onSelect }) => {
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-xl rounded-2xl bg-[#0f0f18] border border-gray-700/60 shadow-2xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-xl rounded-t-2xl sm:rounded-2xl bg-[#0f0f18] border border-gray-700/60 shadow-2xl overflow-hidden">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-700/60">
           <SearchIcon size={18} className="text-gray-400 flex-shrink-0" />
@@ -86,7 +86,7 @@ const SearchModal = ({ isOpen, onClose, chatHistory = [], onSelect }) => {
         </div>
 
         {/* Results */}
-        <div className="max-h-[60vh] overflow-y-auto py-2">
+        <div className="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto py-2">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
               <div className="w-12 h-12 rounded-2xl bg-gray-800 flex items-center justify-center mb-3">

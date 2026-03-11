@@ -12,23 +12,22 @@ const ImageCard = ({ url }) => {
   const [error, setError] = useState(false);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       {!loaded && !error && (
-        <div className="flex items-center justify-center w-[340px] h-[220px] text-violet-400 gap-2 text-sm">
+        <div className="flex items-center justify-center w-full h-[180px] sm:h-[220px] text-violet-400 gap-2 text-sm">
           <div className="animate-spin w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full" />
           Generating image…
         </div>
       )}
       {error ? (
-        <div className="flex items-center justify-center w-[340px] h-[120px] text-gray-500 text-sm">
+        <div className="flex items-center justify-center w-full h-[100px] text-gray-500 text-sm px-4 text-center">
           Failed to generate image. Try again.
         </div>
       ) : (
         <img
           src={url}
           alt="AI generated"
-          className={`max-w-full rounded-xl transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0 absolute'}`}
-          style={{ maxWidth: '340px' }}
+          className={`w-full rounded-xl transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0 absolute'}`}
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
         />
@@ -347,11 +346,11 @@ const MainPage = () => {
                 <Menu size={20} />
               </button>
             )}
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold" style={{ color: 'var(--header-text)' }}>
+              <span className="font-semibold truncate max-w-[140px] sm:max-w-xs md:max-w-sm" style={{ color: 'var(--header-text)' }}>
                 {activeChat?.title || 'Lumina'}
               </span>
             </div>
@@ -408,17 +407,17 @@ const MainPage = () => {
                       className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {msg.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="hidden sm:flex w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-600/30 items-center justify-center flex-shrink-0 mt-0.5">
                           <Sparkles className="h-4 w-4 text-violet-400" />
                         </div>
                       )}
                       {msg.role === 'assistant' && msg.content.startsWith('__IMAGE__:') ? (
-                        <div className="max-w-[78%] rounded-2xl overflow-hidden border border-violet-600/20 bg-[#0f0f18]">
+                        <div className="max-w-[90%] sm:max-w-[78%] w-full rounded-2xl overflow-hidden border border-violet-600/20 bg-[#0f0f18]">
                           <ImageCard url={msg.content.replace('__IMAGE__:', '')} />
                         </div>
                       ) : (
                         <div
-                          className={`max-w-[78%] rounded-2xl leading-relaxed border ${
+                          className={`max-w-[90%] sm:max-w-[78%] rounded-2xl leading-relaxed border ${
                             msg.role === 'user'
                               ? 'bg-violet-600 text-white rounded-tr-sm border-transparent'
                               : 'rounded-tl-sm'
@@ -438,7 +437,7 @@ const MainPage = () => {
                         </div>
                       )}
                       {msg.role === 'user' && (
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center flex-shrink-0 mt-0.5 text-white font-bold text-xs shadow">
+                        <div className="hidden sm:flex w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 items-center justify-center flex-shrink-0 mt-0.5 text-white font-bold text-xs shadow">
                           {getUserInitial()}
                         </div>
                       )}
@@ -472,13 +471,13 @@ const MainPage = () => {
                 <Sparkles className="h-4 w-4 text-violet-400" />
                 <span className="text-violet-300 text-sm font-medium tracking-wide">Lumina</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-3">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-3 px-2">
                 Intelligent. Fast.{' '}
                 <span className="bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text text-transparent">
                   Helpful.
                 </span>
               </h1>
-              <p className="text-gray-400 text-center max-w-sm mb-8 text-sm md:text-base">
+              <p className="text-gray-400 text-center max-w-sm mb-6 sm:mb-8 text-sm px-4">
                 Your AI assistant is ready to help you think, create, plan, and explore ideas.
               </p>
 

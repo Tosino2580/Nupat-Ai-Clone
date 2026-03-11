@@ -1,4 +1,4 @@
-  import React, { useState } from "react";
+  import { useState } from "react";
   import Register from "./Register";
   import Login from "./Login";
 
@@ -6,7 +6,7 @@
     const [showRegister, setShowRegister] = useState(false);
 
     return (
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full overflow-y-auto">
         {/* Login Form */}
         <div
           className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${

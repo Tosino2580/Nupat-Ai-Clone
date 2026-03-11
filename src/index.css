@@ -62,11 +62,26 @@
 }
 
 /* ─── Base ─────────────────────────────────────────── */
+html {
+  height: 100%;
+}
+
 body {
+  height: 100%;
   font-family: 'Montserrat', sans-serif;
   background-color: #05040a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Prevent tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ─── Background grid ──────────────────────────────── */
