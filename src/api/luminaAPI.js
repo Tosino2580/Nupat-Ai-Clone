@@ -1,6 +1,5 @@
-// In production set VITE_API_URL in your Vercel environment variables.
-// Locally it falls back to http://localhost:3001
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:3001" : "https://nupat-ai-clone-production.up.railway.app");
 
 // ─── Fetch helpers ────────────────────────────────────────────
 
