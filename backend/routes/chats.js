@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const Groq = require('groq-sdk');
-const { chats, messages } = require('../database');
+const { getDB } = require('../database');
 const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
@@ -28,7 +28,7 @@ function buildImageUrl(prompt) {
   return `https://image.pollinations.ai/prompt/${clean}?width=800&height=512&nologo=true&seed=${Date.now()}`;
 }
 
-// Helper — strips NeDB internal _id and exposes it as id
+// Strip _id and expose as id
 function pub(doc) {
   if (!doc) return null;
   const { _id, ...rest } = doc;
@@ -38,15 +38,11 @@ function pub(doc) {
 // ─── POST /api/v1/chats ───────────────────────────────────────
 router.post('/', authMiddleware, async (req, res) => {
   try {
+    const { chats } = getDB();
     const id = uuidv4();
     const now = Date.now();
-    const doc = await chats.insertAsync({
-      _id: id,
-      userId: req.user.id,
-      title: req.body.title || 'New Chat',
-      created_at: now,
-      updated_at: now,
-    });
+    const doc = { _id: id, userId: req.user.id, title: req.body.title || 'New Chat', created_at: now, updated_at: now };
+    await chats.insertOne(doc);
     return res.status(201).json(pub(doc));
   } catch (err) {
     console.error('Create chat error:', err);
@@ -57,9 +53,8 @@ router.post('/', authMiddleware, async (req, res) => {
 // ─── GET /api/v1/chats ────────────────────────────────────────
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const docs = await chats
-      .findAsync({ userId: req.user.id })
-      .sort({ updated_at: -1 });
+    const { chats } = getDB();
+    const docs = await chats.find({ userId: req.user.id }).sort({ updated_at: -1 }).toArray();
     return res.json(docs.map(pub));
   } catch (err) {
     return res.status(500).json({ detail: 'Failed to get chats.' });
@@ -69,7 +64,8 @@ router.get('/', authMiddleware, async (req, res) => {
 // ─── GET /api/v1/chats/:id ────────────────────────────────────
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
-    const chat = await chats.findOneAsync({ _id: req.params.id, userId: req.user.id });
+    const { chats } = getDB();
+    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
     if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
     return res.json(pub(chat));
   } catch (err) {
@@ -80,14 +76,15 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // ─── PATCH /api/v1/chats/:id ──────────────────────────────────
 router.patch('/:id', authMiddleware, async (req, res) => {
   try {
-    const chat = await chats.findOneAsync({ _id: req.params.id, userId: req.user.id });
+    const { chats } = getDB();
+    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
     if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
 
-    await chats.updateAsync(
+    await chats.updateOne(
       { _id: req.params.id },
       { $set: { title: req.body.title || chat.title, updated_at: Date.now() } }
     );
-    const updated = await chats.findOneAsync({ _id: req.params.id });
+    const updated = await chats.findOne({ _id: req.params.id });
     return res.json(pub(updated));
   } catch (err) {
     return res.status(500).json({ detail: 'Failed to update chat.' });
@@ -97,11 +94,12 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 // ─── DELETE /api/v1/chats/:id ─────────────────────────────────
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const chat = await chats.findOneAsync({ _id: req.params.id, userId: req.user.id });
+    const { chats, messages } = getDB();
+    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
     if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
 
-    await chats.removeAsync({ _id: req.params.id }, {});
-    await messages.removeAsync({ chatId: req.params.id }, { multi: true });
+    await chats.deleteOne({ _id: req.params.id });
+    await messages.deleteMany({ chatId: req.params.id });
     return res.json({ message: 'Chat deleted.' });
   } catch (err) {
     return res.status(500).json({ detail: 'Failed to delete chat.' });
@@ -111,13 +109,11 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // ─── GET /api/v1/chats/:id/messages ──────────────────────────
 router.get('/:id/messages', authMiddleware, async (req, res) => {
   try {
-    const chat = await chats.findOneAsync({ _id: req.params.id, userId: req.user.id });
+    const { chats, messages } = getDB();
+    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
     if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
 
-    const msgs = await messages
-      .findAsync({ chatId: req.params.id })
-      .sort({ created_at: 1 });
-
+    const msgs = await messages.find({ chatId: req.params.id }).sort({ created_at: 1 }).toArray();
     return res.json({ messages: msgs.map(pub) });
   } catch (err) {
     return res.status(500).json({ detail: 'Failed to get messages.' });
@@ -127,38 +123,28 @@ router.get('/:id/messages', authMiddleware, async (req, res) => {
 // ─── POST /api/v1/chats/:id/messages ─────────────────────────
 router.post('/:id/messages', authMiddleware, async (req, res) => {
   try {
+    const { chats, messages } = getDB();
     const { content } = req.body;
     if (!content || !content.trim()) {
       return res.status(400).json({ detail: 'Message content is required.' });
     }
 
-    const chat = await chats.findOneAsync({ _id: req.params.id, userId: req.user.id });
+    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
     if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
 
     // Save user message
     const userMsgId = uuidv4();
     const userNow = Date.now();
-    const userMsg = await messages.insertAsync({
-      _id: userMsgId,
-      chatId: chat._id,
-      role: 'user',
-      content: content.trim(),
-      created_at: userNow,
-    });
+    const userMsg = { _id: userMsgId, chatId: chat._id, role: 'user', content: content.trim(), created_at: userNow };
+    await messages.insertOne(userMsg);
 
     let assistantContent;
 
     if (isImageRequest(content.trim())) {
-      // Image generation via Pollinations.ai (free, no key needed)
-      const imageUrl = buildImageUrl(content.trim());
-      assistantContent = `__IMAGE__:${imageUrl}`;
+      assistantContent = `__IMAGE__:${buildImageUrl(content.trim())}`;
     } else {
-      // Get full conversation history for Groq context
-      const history = await messages
-        .findAsync({ chatId: chat._id })
-        .sort({ created_at: 1 });
+      const history = await messages.find({ chatId: chat._id }).sort({ created_at: 1 }).toArray();
 
-      // Call Groq
       const completion = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [
@@ -169,34 +155,22 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
         temperature: 0.7,
       });
 
-      assistantContent =
-        completion.choices[0]?.message?.content ||
-        'Sorry, I could not generate a response. Please try again.';
+      assistantContent = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response. Please try again.';
     }
 
     // Save assistant message
     const assistantMsgId = uuidv4();
     const assistantNow = Date.now();
-    const assistantMsg = await messages.insertAsync({
-      _id: assistantMsgId,
-      chatId: chat._id,
-      role: 'assistant',
-      content: assistantContent,
-      created_at: assistantNow,
-    });
+    const assistantMsg = { _id: assistantMsgId, chatId: chat._id, role: 'assistant', content: assistantContent, created_at: assistantNow };
+    await messages.insertOne(assistantMsg);
 
     // Auto-title from first user message
-    if (chat.title === 'New Chat') {
-      const autoTitle =
-        content.trim().length > 55
-          ? content.trim().slice(0, 55) + '…'
-          : content.trim();
-      await chats.updateAsync({ _id: chat._id }, { $set: { title: autoTitle, updated_at: assistantNow } });
-    } else {
-      await chats.updateAsync({ _id: chat._id }, { $set: { updated_at: assistantNow } });
-    }
+    const newTitle = chat.title === 'New Chat'
+      ? (content.trim().length > 55 ? content.trim().slice(0, 55) + '…' : content.trim())
+      : chat.title;
+    await chats.updateOne({ _id: chat._id }, { $set: { title: newTitle, updated_at: assistantNow } });
 
-    const updatedChat = await chats.findOneAsync({ _id: chat._id });
+    const updatedChat = await chats.findOne({ _id: chat._id });
 
     return res.json({
       user_message: pub(userMsg),
@@ -206,9 +180,7 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Send message error:', err);
     if (err?.status === 401 || err?.message?.includes('API key')) {
-      return res.status(500).json({
-        detail: 'AI error: invalid or missing GROQ_API_KEY in backend/.env',
-      });
+      return res.status(500).json({ detail: 'AI error: invalid or missing GROQ_API_KEY in backend/.env' });
     }
     return res.status(500).json({ detail: 'Failed to send message. Please try again.' });
   }

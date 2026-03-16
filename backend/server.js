@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const { connectDB } = require('./database');
 
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chats');
@@ -54,12 +55,19 @@ app.use((req, res) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🚀 Lumina backend running at http://localhost:${PORT}`);
-  console.log(`   Health check: http://localhost:${PORT}/health\n`);
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Lumina backend running at http://localhost:${PORT}`);
+      console.log(`   Health check: http://localhost:${PORT}/health\n`);
 
-  if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'your_groq_api_key_here') {
-    console.warn('⚠️  GROQ_API_KEY is not set in backend/.env');
-    console.warn('   AI responses will not work until you add your key.\n');
-  }
-});
+      if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY === 'your_groq_api_key_here') {
+        console.warn('⚠️  GROQ_API_KEY is not set in backend/.env');
+        console.warn('   AI responses will not work until you add your key.\n');
+      }
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Failed to connect to MongoDB:', err.message);
+    process.exit(1);
+  });

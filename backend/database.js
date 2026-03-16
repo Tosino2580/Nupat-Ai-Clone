@@ -1,33 +1,30 @@
-const Datastore = require('@seald-io/nedb');
-const path = require('path');
-const fs = require('fs');
+const { MongoClient } = require('mongodb');
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+let _db = null;
 
-// Persistent datastores — stored as plain JSON files in backend/data/
-const users = new Datastore({
-  filename: path.join(dataDir, 'users.db'),
-  autoload: true,
-});
+async function connectDB() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI environment variable is not set');
 
-const chats = new Datastore({
-  filename: path.join(dataDir, 'chats.db'),
-  autoload: true,
-});
+  const client = new MongoClient(uri);
+  await client.connect();
+  _db = client.db('lumina');
 
-const messages = new Datastore({
-  filename: path.join(dataDir, 'messages.db'),
-  autoload: true,
-});
+  // Indexes
+  await _db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await _db.collection('chats').createIndex({ userId: 1 });
+  await _db.collection('messages').createIndex({ chatId: 1 });
 
-// Unique index on email
-users.ensureIndex({ fieldName: 'email', unique: true });
-// Fast lookups by owner / chat
-chats.ensureIndex({ fieldName: 'userId' });
-messages.ensureIndex({ fieldName: 'chatId' });
+  console.log('✅ MongoDB connected (data stored permanently in Atlas)');
+}
 
-console.log('✅ Database ready  (data stored in backend/data/)');
+function getDB() {
+  if (!_db) throw new Error('Database not initialized. Call connectDB() first.');
+  return {
+    users: _db.collection('users'),
+    chats: _db.collection('chats'),
+    messages: _db.collection('messages'),
+  };
+}
 
-module.exports = { users, chats, messages };
+module.exports = { connectDB, getDB };

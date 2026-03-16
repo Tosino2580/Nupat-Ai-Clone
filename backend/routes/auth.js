@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { users } = require('../database');
+const { getDB } = require('../database');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
@@ -11,6 +11,7 @@ const router = express.Router();
 router.post('/signup', async (req, res) => {
   try {
     const { email, phone, password } = req.body;
+    const { users } = getDB();
 
     if (!email || !password) {
       return res.status(400).json({ detail: 'Email and password are required.' });
@@ -21,7 +22,7 @@ router.post('/signup', async (req, res) => {
 
     const emailClean = email.toLowerCase().trim();
 
-    const existing = await users.findOneAsync({ email: emailClean });
+    const existing = await users.findOne({ email: emailClean });
     if (existing) {
       return res.status(400).json({ detail: 'An account with this email already exists.' });
     }
@@ -30,7 +31,7 @@ router.post('/signup', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const now = Date.now();
 
-    await users.insertAsync({
+    await users.insertOne({
       _id: id,
       email: emailClean,
       phone: phone || null,
@@ -54,12 +55,13 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const { users } = getDB();
 
     if (!email || !password) {
       return res.status(400).json({ detail: 'Email and password are required.' });
     }
 
-    const user = await users.findOneAsync({ email: email.toLowerCase().trim() });
+    const user = await users.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(401).json({ detail: 'Invalid email or password.' });
     }
@@ -88,7 +90,8 @@ router.post('/logout', authMiddleware, (req, res) => {
 
 // ─── GET /api/v1/auth/me ──────────────────────────────────────
 router.get('/me', authMiddleware, async (req, res) => {
-  const user = await users.findOneAsync({ _id: req.user.id });
+  const { users } = getDB();
+  const user = await users.findOne({ _id: req.user.id });
   if (!user) return res.status(404).json({ detail: 'User not found.' });
   return res.json({ id: user._id, email: user.email, phone: user.phone, created_at: user.created_at });
 });
