@@ -322,7 +322,7 @@ const MainPage = () => {
       />
 
       {/* Main content */}
-      <div className="relative flex flex-1 flex-col min-h-screen overflow-hidden">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="bg-grid-pattern absolute inset-0 opacity-20"></div>
