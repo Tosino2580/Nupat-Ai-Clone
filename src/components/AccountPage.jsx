@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Settings, HelpCircle, LogOut, ExternalLink, User, Shield } from 'lucide-react';
+import { ArrowLeft, Settings, HelpCircle, LogOut, User, Shield } from 'lucide-react';
 import { useState } from 'react';
 import SettingsModal from './SettingsModal';
 
@@ -78,18 +78,15 @@ const AccountPage = () => {
           Privacy & Security
         </button>
 
-        <a
-          href="https://github.com/Tosino2580/Nupat-Ai-Clone"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => navigate('/help')}
           className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-gray-300 hover:bg-gray-800/60 hover:text-white transition text-sm font-medium"
         >
           <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
             <HelpCircle size={15} className="text-gray-400" />
           </div>
           Help & FAQ
-          <ExternalLink size={12} className="text-gray-600 ml-auto" />
-        </a>
+        </button>
       </div>
 
       {/* Logout */}

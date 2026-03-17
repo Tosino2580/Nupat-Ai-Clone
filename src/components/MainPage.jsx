@@ -416,16 +416,12 @@ const MainPage = () => {
                         >
                           <Settings size={16} className="text-gray-400" /> Settings
                         </button>
-                        <a
-                          href="https://github.com/Tosino2580/Nupat-Ai-Clone"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => setShowUserMenu(false)}
+                        <button
+                          onClick={() => { setShowUserMenu(false); navigate('/help'); }}
                           className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800/60 hover:text-white transition text-sm"
                         >
                           <HelpCircle size={16} className="text-gray-400" /> Help & FAQ
-                          <ExternalLink size={11} className="text-gray-600 ml-auto" />
-                        </a>
+                        </button>
                       </div>
 
                       {/* Logout */}
