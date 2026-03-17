@@ -381,7 +381,7 @@ const MainPage = () => {
                   {getUserInitial()}
                 </button>
                 {showUserMenu && (
-                  <div onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-60 bg-gray-900 border border-gray-700/60 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  <div onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-56 sm:w-60 bg-gray-900 border border-gray-700/60 rounded-2xl shadow-2xl z-50 overflow-hidden">
                     {/* User info */}
                     <div className="px-4 py-3.5 border-b border-gray-700/60 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -396,7 +396,7 @@ const MainPage = () => {
                     {/* Menu items */}
                     <div className="py-1.5">
                       <button
-                        onClick={() => { setShowUserMenu(false); setIsSettingsOpen(true); }}
+                        onClick={() => { setShowUserMenu(false); setTimeout(() => setIsSettingsOpen(true), 50); }}
                         className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800/80 text-sm transition flex items-center gap-3"
                       >
                         <Settings size={15} className="text-gray-400" />
