@@ -15,12 +15,35 @@ Be concise but thorough. If you don't know something, say so honestly.`;
 
 // Detect if the user is asking for image generation
 function isImageRequest(text) {
-  const lower = text.toLowerCase();
-  const imgWords = ['image', 'picture', 'photo', 'illustration', 'drawing', 'painting',
-    'artwork', 'portrait', 'landscape', 'wallpaper', 'logo', 'icon', 'banner', 'poster', 'sketch'];
-  const actWords = ['generate', 'create', 'draw', 'make', 'show', 'paint',
-    'design', 'produce', 'render', 'give me', 'can you'];
-  return imgWords.some(w => lower.includes(w)) && actWords.some(w => lower.includes(w));
+  const lower = text.toLowerCase().trim();
+
+  // These words almost exclusively mean image generation
+  const imageOnlyActions = ['draw', 'paint', 'sketch', 'illustrate'];
+  if (imageOnlyActions.some(w => lower.includes(w))) return true;
+
+  // Explicit image nouns
+  const imgNouns = ['image', 'picture', 'photo', 'photograph', 'illustration', 'drawing',
+    'painting', 'artwork', 'portrait', 'wallpaper', 'logo', 'icon', 'banner', 'poster',
+    'sketch', 'graphic', 'visual', 'render', 'art'];
+
+  // Action words
+  const actWords = ['generate', 'create', 'make', 'show', 'design', 'produce', 'give me'];
+
+  const hasAction = actWords.some(w => lower.includes(w));
+  if (!hasAction) return false;
+
+  // Has explicit image noun → definitely image
+  if (imgNouns.some(w => lower.includes(w))) return true;
+
+  // Has action but no image noun → check it's not a text request
+  const textTypes = ['code', 'script', 'list', 'story', 'poem', 'essay', 'report',
+    'outline', 'plan', 'summary', 'letter', 'email', 'paragraph', 'sentence',
+    'explanation', 'answer', 'response', 'idea', 'ideas', 'suggestion', 'joke',
+    'recipe', 'function', 'algorithm', 'table', 'chart', 'graph data'];
+  if (textTypes.some(w => lower.includes(w))) return false;
+
+  // "generate a sunset" / "create a dragon" etc. → treat as image
+  return lower.includes('generate') || lower.includes('create a') || lower.includes('create an');
 }
 
 function buildImageUrl(prompt) {
