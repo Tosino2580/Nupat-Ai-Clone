@@ -375,57 +375,70 @@ const MainPage = () => {
             ) : (
               <div className="relative">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowUserMenu((p) => !p); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.innerWidth < 768) {
+                      navigate('/account');
+                    } else {
+                      setShowUserMenu((p) => !p);
+                    }
+                  }}
                   className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-sm hover:opacity-90 transition shadow-lg"
                 >
                   {getUserInitial()}
                 </button>
+
+                {/* Desktop slide-in panel */}
                 {showUserMenu && (
-                  <div onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-56 sm:w-60 bg-gray-900 border border-gray-700/60 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                    {/* User info */}
-                    <div className="px-4 py-3.5 border-b border-gray-700/60 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                        {getUserInitial()}
+                  <>
+                    <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setShowUserMenu(false)} />
+                    <div className="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800/60 z-50 flex flex-col shadow-2xl animate-slide-in-right">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800/60">
+                        <h2 className="text-white font-semibold">My Account</h2>
+                        <button onClick={() => setShowUserMenu(false)} className="text-gray-400 hover:text-white transition text-xl leading-none">✕</button>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{getUserEmail() || 'My Account'}</p>
-                        <p className="text-violet-400 text-xs">Free Plan</p>
+
+                      {/* User info */}
+                      <div className="flex flex-col items-center py-7 px-5 border-b border-gray-800/60">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-2xl mb-3 shadow-lg">
+                          {getUserInitial()}
+                        </div>
+                        <p className="text-white font-semibold text-sm truncate max-w-full">{getUserEmail()}</p>
+                        <span className="mt-1.5 text-xs text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full">Free Plan</span>
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="flex flex-col px-3 py-3 gap-0.5 flex-1">
+                        <button
+                          onClick={() => { setShowUserMenu(false); setTimeout(() => setIsSettingsOpen(true), 50); }}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800/60 hover:text-white transition text-sm"
+                        >
+                          <Settings size={16} className="text-gray-400" /> Settings
+                        </button>
+                        <a
+                          href="https://github.com/Tosino2580/Nupat-Ai-Clone"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800/60 hover:text-white transition text-sm"
+                        >
+                          <HelpCircle size={16} className="text-gray-400" /> Help & FAQ
+                          <ExternalLink size={11} className="text-gray-600 ml-auto" />
+                        </a>
+                      </div>
+
+                      {/* Logout */}
+                      <div className="px-4 pb-6">
+                        <button
+                          onClick={() => { setShowUserMenu(false); handleLogout(); }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition text-sm font-semibold"
+                        >
+                          <LogOut size={15} /> Log out
+                        </button>
                       </div>
                     </div>
-
-                    {/* Menu items */}
-                    <div className="py-1.5">
-                      <button
-                        onClick={() => { setShowUserMenu(false); setTimeout(() => setIsSettingsOpen(true), 50); }}
-                        className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800/80 text-sm transition flex items-center gap-3"
-                      >
-                        <Settings size={15} className="text-gray-400" />
-                        Settings
-                      </button>
-                      <a
-                        href="https://github.com/Tosino2580/Nupat-Ai-Clone"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setShowUserMenu(false)}
-                        className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800/80 text-sm transition flex items-center gap-3"
-                      >
-                        <HelpCircle size={15} className="text-gray-400" />
-                        Help & FAQ
-                        <ExternalLink size={11} className="text-gray-600 ml-auto" />
-                      </a>
-                    </div>
-
-                    {/* Logout */}
-                    <div className="border-t border-gray-700/60 py-1.5">
-                      <button
-                        onClick={() => { setShowUserMenu(false); handleLogout(); }}
-                        className="w-full text-left px-4 py-2.5 text-red-400 hover:bg-red-600/10 text-sm transition flex items-center gap-3"
-                      >
-                        <LogOut size={15} className="text-red-400" />
-                        Log out
-                      </button>
-                    </div>
-                  </div>
+                  </>
                 )}
               </div>
             )}
