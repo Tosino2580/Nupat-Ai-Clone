@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Send, Menu, Download } from 'lucide-react';
+import { Sparkles, Send, Menu, Download, Settings, LogOut, HelpCircle, ExternalLink } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import SearchModal from './SearchModal';
@@ -300,6 +300,15 @@ const MainPage = () => {
     }
   };
 
+  const getUserEmail = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user.email || '';
+    } catch {
+      return '';
+    }
+  };
+
   const suggestions = [
     { icon: '✉️', text: 'Help me write a professional email' },
     { icon: '💡', text: 'Explain a complex topic simply' },
@@ -372,22 +381,50 @@ const MainPage = () => {
                   {getUserInitial()}
                 </button>
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-44 bg-gray-900 border border-gray-700/80 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-700/60">
-                      <p className="text-white text-sm font-semibold">My Account</p>
+                  <div className="absolute right-0 mt-2 w-60 bg-gray-900 border border-gray-700/60 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    {/* User info */}
+                    <div className="px-4 py-3.5 border-b border-gray-700/60 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {getUserInitial()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{getUserEmail() || 'My Account'}</p>
+                        <p className="text-violet-400 text-xs">Free Plan</p>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => { setShowUserMenu(false); setIsSettingsOpen(true); }}
-                      className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800 text-sm transition"
-                    >
-                      Settings
-                    </button>
-                    <button
-                      onClick={() => { setShowUserMenu(false); handleLogout(); }}
-                      className="w-full text-left px-4 py-2.5 text-red-400 hover:bg-red-600/20 text-sm transition"
-                    >
-                      Logout
-                    </button>
+
+                    {/* Menu items */}
+                    <div className="py-1.5">
+                      <button
+                        onClick={() => { setShowUserMenu(false); setIsSettingsOpen(true); }}
+                        className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800/80 text-sm transition flex items-center gap-3"
+                      >
+                        <Settings size={15} className="text-gray-400" />
+                        Settings
+                      </button>
+                      <a
+                        href="https://github.com/Tosino2580/Nupat-Ai-Clone"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-gray-800/80 text-sm transition flex items-center gap-3"
+                      >
+                        <HelpCircle size={15} className="text-gray-400" />
+                        Help & FAQ
+                        <ExternalLink size={11} className="text-gray-600 ml-auto" />
+                      </a>
+                    </div>
+
+                    {/* Logout */}
+                    <div className="border-t border-gray-700/60 py-1.5">
+                      <button
+                        onClick={() => { setShowUserMenu(false); handleLogout(); }}
+                        className="w-full text-left px-4 py-2.5 text-red-400 hover:bg-red-600/10 text-sm transition flex items-center gap-3"
+                      >
+                        <LogOut size={15} className="text-red-400" />
+                        Log out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
