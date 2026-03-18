@@ -143,32 +143,42 @@ router.get('/:id/messages', authMiddleware, async (req, res) => {
   }
 });
 
-// ─── POST /api/v1/chats/:id/messages ─────────────────────────
+// ─── POST /api/v1/chats/:id/messages (streaming SSE) ─────────
 router.post('/:id/messages', authMiddleware, async (req, res) => {
+  const { chats, messages } = getDB();
+  const { content } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ detail: 'Message content is required.' });
+  }
+
+  const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
+
+  // SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
   try {
-    const { chats, messages } = getDB();
-    const { content } = req.body;
-    if (!content || !content.trim()) {
-      return res.status(400).json({ detail: 'Message content is required.' });
-    }
-
-    const chat = await chats.findOne({ _id: req.params.id, userId: req.user.id });
-    if (!chat) return res.status(404).json({ detail: 'Chat not found.' });
-
     // Save user message
     const userMsgId = uuidv4();
     const userNow = Date.now();
     const userMsg = { _id: userMsgId, chatId: chat._id, role: 'user', content: content.trim(), created_at: userNow };
     await messages.insertOne(userMsg);
+    send({ type: 'user_message', message: pub(userMsg) });
 
-    let assistantContent;
+    let assistantContent = '';
 
     if (isImageRequest(content.trim())) {
       assistantContent = `__IMAGE__:${buildImageUrl(content.trim())}`;
+      send({ type: 'chunk', content: assistantContent });
     } else {
       const history = await messages.find({ chatId: chat._id }).sort({ created_at: 1 }).toArray();
-
-      const completion = await groq.chat.completions.create({
+      const stream = await groq.chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: AI_SYSTEM_PROMPT },
@@ -176,9 +186,16 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
         ],
         max_tokens: 2048,
         temperature: 0.7,
+        stream: true,
       });
 
-      assistantContent = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response. Please try again.';
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content || '';
+        if (text) {
+          assistantContent += text;
+          send({ type: 'chunk', content: text });
+        }
+      }
     }
 
     // Save assistant message
@@ -187,25 +204,19 @@ router.post('/:id/messages', authMiddleware, async (req, res) => {
     const assistantMsg = { _id: assistantMsgId, chatId: chat._id, role: 'assistant', content: assistantContent, created_at: assistantNow };
     await messages.insertOne(assistantMsg);
 
-    // Auto-title from first user message
+    // Auto-title
     const newTitle = chat.title === 'New Chat'
       ? (content.trim().length > 55 ? content.trim().slice(0, 55) + '…' : content.trim())
       : chat.title;
     await chats.updateOne({ _id: chat._id }, { $set: { title: newTitle, updated_at: assistantNow } });
-
     const updatedChat = await chats.findOne({ _id: chat._id });
 
-    return res.json({
-      user_message: pub(userMsg),
-      assistant_message: pub(assistantMsg),
-      chat: pub(updatedChat),
-    });
+    send({ type: 'done', assistant_message: pub(assistantMsg), chat: pub(updatedChat) });
+    res.end();
   } catch (err) {
-    console.error('Send message error:', err);
-    if (err?.status === 401 || err?.message?.includes('API key')) {
-      return res.status(500).json({ detail: 'AI error: invalid or missing GROQ_API_KEY in backend/.env' });
-    }
-    return res.status(500).json({ detail: 'Failed to send message. Please try again.' });
+    console.error('Stream message error:', err);
+    send({ type: 'error', detail: 'Failed to generate response. Please try again.' });
+    res.end();
   }
 });
 
