@@ -248,36 +248,93 @@ const MainPage = () => {
         persistHistory(currentHistory);
       }
 
-      const res = await sendMessage(token, chatId, content);
-      const userMsg = res?.user_message || tempUserMsg;
-      const assistantMsg = res?.assistant_message || {
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        content: res?.message || res?.response || res?.text || 'No response received.',
-      };
+      const response = await sendMessage(token, chatId, content);
+      
+      if (!response.body) {
+        throw new Error('Failed to get response stream.');
+      }
 
-      setActiveChat((prev) => {
-        const withoutTemp = (prev?.messages ?? []).filter((m) => m.id !== tempId);
-        const updated = {
-          ...(prev || {}),
-          id: chatId,
-          messages: [...withoutTemp, userMsg, assistantMsg],
-          title: res?.chat?.title || prev?.title,
-        };
-        const idx = currentHistory.findIndex((c) => c.id === updated.id);
-        const next = [...currentHistory];
-        if (idx !== -1) next[idx] = { ...updated };
-        else next.unshift({ ...updated });
-        persistHistory(next.slice(0, 100));
-        return updated;
-      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let assistantMsgId = `a-temp-${Date.now()}`;
+
+      // Add a placeholder for assistant response
+      setActiveChat((prev) => ({
+        ...prev,
+        id: chatId,
+        messages: [...(prev?.messages ?? []), { id: assistantMsgId, role: 'assistant', content: '' }],
+      }));
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n\n');
+
+        for (const line of lines) {
+          if (!line.trim() || !line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.replace('data: ', ''));
+            
+            if (data.type === 'chunk') {
+              assistantContent += data.content;
+              setActiveChat((prev) => {
+                const msgs = [...(prev?.messages ?? [])];
+                const idx = msgs.findIndex(m => m.id === assistantMsgId);
+                if (idx !== -1) {
+                  msgs[idx] = { ...msgs[idx], content: assistantContent };
+                }
+                return { ...prev, messages: msgs };
+              });
+            } else if (data.type === 'done') {
+              const { assistant_message, chat: updatedChat } = data;
+              
+              setActiveChat((prev) => {
+                const msgs = [...(prev?.messages ?? [])];
+                const idx = msgs.findIndex(m => m.id === assistantMsgId);
+                // Replace temp assistant message with real one
+                if (idx !== -1) {
+                  msgs[idx] = assistant_message;
+                }
+                // Also replace temp user message with real one if possible
+                const uIdx = msgs.findIndex(m => m.id === tempId);
+                if (uIdx !== -1 && data.user_message) {
+                  msgs[uIdx] = data.user_message;
+                }
+
+                const updated = {
+                  ...prev,
+                  id: chatId,
+                  messages: msgs,
+                  title: updatedChat?.title || prev?.title,
+                };
+
+                // Update history
+                const hIdx = currentHistory.findIndex((c) => c.id === updated.id);
+                const next = [...currentHistory];
+                if (hIdx !== -1) next[hIdx] = { ...updated, messages: [] }; // Don't store all messages in history list
+                else next.unshift({ ...updated, messages: [] });
+                persistHistory(next.slice(0, 100));
+
+                return updated;
+              });
+            } else if (data.type === 'error') {
+              throw new Error(data.detail || 'Streaming error');
+            }
+          } catch (e) {
+            console.warn('Failed to parse SSE chunk', e);
+          }
+        }
+      }
     } catch (err) {
       console.error('Send message error:', err);
       alert(err.message || 'Failed to send message. Please try again.');
       // Remove temp message on error
       setActiveChat((prev) => ({
         ...prev,
-        messages: (prev?.messages ?? []).filter((m) => m.id !== tempId),
+        messages: (prev?.messages ?? []).filter((m) => m.id !== tempId && !m.id.toString().startsWith('a-temp')),
       }));
     } finally {
       setIsGenerating(false);

@@ -5,22 +5,37 @@ export const BASE_URL = import.meta.env.VITE_API_URL ||
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Don't timeout if we are streaming
+  const isStream = options.headers?.['Accept'] === 'text/event-stream' || options.isStream;
+  
+  let timer;
+  if (!isStream) {
+    timer = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (err) {
     if (err.name === "AbortError") {
       throw new Error("Request timed out. Is the backend server running?");
     }
+    const isLocal = url.includes('localhost');
     throw new Error(
-      "Cannot reach the server. Make sure the backend is running on port 3001."
+      isLocal 
+        ? "Cannot reach the local server. Make sure the backend is running on port 3001."
+        : `Cannot reach the API at ${new URL(url).hostname}. Please check your connection or backend status.`
     );
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 
 async function handleResponse(res) {
+  // If it's a stream, don't try to parse as JSON here
+  if (res.headers.get('Content-Type')?.includes('text/event-stream')) {
+    return res; 
+  }
+
   let data = {};
   try {
     data = await res.json();
@@ -132,17 +147,22 @@ export async function deleteChat(token, chatId) {
 
 // ─── Messages ─────────────────────────────────────────────────
 
+/**
+ * Sends a message and returns the response object.
+ * If the response is a stream, the caller should handle it.
+ */
 export async function sendMessage(token, chatId, content) {
-  // AI can take a few seconds — give it 60s
   const res = await fetchWithTimeout(
     `${BASE_URL}/api/v1/chats/${chatId}/messages`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "text/event-stream",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ content }),
+      isStream: true
     },
     60000
   );
