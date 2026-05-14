@@ -273,6 +273,7 @@ const MainPage = () => {
       });
     } catch (err) {
       console.error('Send message error:', err);
+      alert(err.message || 'Failed to send message. Please try again.');
       // Remove temp message on error
       setActiveChat((prev) => ({
         ...prev,
