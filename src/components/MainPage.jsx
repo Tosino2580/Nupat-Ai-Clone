@@ -12,7 +12,7 @@ const ImageCard = ({ url }) => {
   const [error, setError] = useState(false);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full ">
       {!loaded && !error && (
         <div className="flex items-center justify-center w-full h-[180px] sm:h-[220px] text-violet-400 gap-2 text-sm">
           <div className="animate-spin w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full" />
